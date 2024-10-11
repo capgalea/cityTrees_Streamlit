@@ -17,7 +17,7 @@ def fetch_data(url):
         raise TypeError("Expected JSON response to be a list")
 
 # URLs for the datasets
-trees_url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/trees-with-species-and-dimensions-urban-forest/exports/json?select=common_name%2C%20diameter_breast_height%2C%20date_planted%2C%20age_description%2C%20latitude%2C%20longitude&where=%20date_planted%20%3E%202020-01-01&order_by=%20date_planted&limit=10000&timezone=UTC&use_labels=false&epsg=4326"
+trees_url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/trees-with-species-and-dimensions-urban-forest/exports/json?select=common_name%2C%20diameter_breast_height%2C%20located_in%2C%20date_planted%2C%20age_description%2C%20latitude%2C%20longitude&where=%20date_planted%20%3E%202020-01-01&order_by=%20date_planted&limit=10000&timezone=UTC&use_labels=false&epsg=4326"
 landmarks_url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/landmarks-and-places-of-interest-including-schools-theatres-health-services-spor/exports/json?limit=10000&timezone=UTC&use_labels=false&epsg=4326"
 
 # Fetch data
@@ -33,6 +33,7 @@ trees_data.rename(columns={
     'common_name': 'Common Name',
     'diameter_breast_height': 'Diameter at Breast Height',
     'date_planted': 'Date Planted',
+    'located_in': 'Located In',
     'latitude': 'Latitude',
     'longitude': 'Longitude',
     'age_description': 'Age Description'
@@ -41,6 +42,7 @@ trees_data.rename(columns={
 landmarks_data.rename(columns={
     'feature_name': 'Feature Name',
     'theme': 'Theme',
+    'sub_theme': 'Sub Theme',
     'co_ordinates.lat': 'Latitude',
     'co_ordinates.lon': 'Longitude'
 }, inplace=True)
@@ -84,7 +86,7 @@ landmarks_count = landmarks_data.groupby('Theme').size().reset_index(name='count
 fig_landmarks = px.bar(landmarks_count, x='count', y='Theme', title='Number of Each Landmark Type')
 
 # Map showing locations of filtered trees and landmarks
-fig_map1 = px.scatter_mapbox(filtered_trees_data, lat='Latitude', lon='Longitude', hover_name='Common Name', 
+fig_map1 = px.scatter_mapbox(filtered_trees_data, lat='Latitude', lon='Longitude', hover_data={'Common Name': True, 'Located In': True, 'Latitude': False, 'Longitude': False}, 
                             color='Common Name', color_discrete_sequence=px.colors.qualitative.Plotly, zoom=11.5, height=500, title='Tree Locations')
 
 # Filter landmarks data based on selected landmarks
@@ -93,7 +95,7 @@ if selected_landmarks:
 else:
     filtered_landmarks_data = landmarks_data
 
-fig_map2 = px.scatter_mapbox(filtered_landmarks_data, lat='Latitude', lon='Longitude', hover_name='Feature Name', color = 'Theme',
+fig_map2 = px.scatter_mapbox(filtered_landmarks_data, lat='Latitude', lon='Longitude', color = 'Theme', hover_data={'Feature Name': True, 'Theme': True, 'Sub Theme': True, 'Latitude': False, 'Longitude': False},
                             color_discrete_sequence=px.colors.qualitative.Plotly, zoom=11.5, height=500, title='Landmark Locations')
 
 # Update layout for title and legend
