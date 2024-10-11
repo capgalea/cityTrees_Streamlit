@@ -1,98 +1,139 @@
-import pandas as pd
-import geopandas as gpd
-import requests
-import csv
-import io
-from shapely.geometry import Point
 import streamlit as st
+import pandas as pd
+import requests
+import plotly.express as px
 
-# URL of the dataset
-url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/trees-with-species-and-dimensions-urban-forest/records?select=common_name%2C%20diameter_breast_height%2C%20date_planted%2C%20latitude%2C%20longitude%2C%20age_description&limit=10&offset=0&timezone=UTC&include_links=false&include_app_metas=false"
+# Set page configuration
+st.set_page_config(layout="wide")
 
-# Send GET request
-response = requests.get(url)
+# Function to fetch data from API
+@st.cache_data
+def fetch_data(url):
+    response = requests.get(url)
+    data = response.json()
+    if isinstance(data, list):
+        return pd.json_normalize(data)
+    else:
+        raise TypeError("Expected JSON response to be a list")
 
-# Check if the request was successful
-if response.status_code == 200:
-    
-    # Decode the content to a string
-    content = response.content.decode('utf-8')
-    
-    # Use io.StringIO to treat the string as a file
-    csv_file = io.StringIO(content)
-    
-    # Read the CSV content
-    csv_reader = csv.reader(csv_file, delimiter=';')
-    
-    # Write the CSV content to a properly formatted CSV file
-    with open("trees_with_species_and_dimensions.csv", "w", newline='', encoding='utf-8') as file:
-        csv_writer = csv.writer(file)
-        for row in csv_reader:
-            csv_writer.writerow(row)
-    
-    print("Trees CSV file has been saved successfully.")
+# URLs for the datasets
+trees_url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/trees-with-species-and-dimensions-urban-forest/exports/json?select=common_name%2C%20diameter_breast_height%2C%20date_planted%2C%20age_description%2C%20latitude%2C%20longitude&where=%20date_planted%20%3E%202020-01-01&order_by=%20date_planted&limit=10000&timezone=UTC&use_labels=false&epsg=4326"
+landmarks_url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/landmarks-and-places-of-interest-including-schools-theatres-health-services-spor/exports/json?limit=10000&timezone=UTC&use_labels=false&epsg=4326"
+
+# Fetch data
+trees_data = fetch_data(trees_url)
+landmarks_data = fetch_data(landmarks_url)
+
+# Data preparation
+trees_data['date_planted'] = pd.to_datetime(trees_data['date_planted'])
+trees_data['month_planted'] = trees_data['date_planted'].dt.to_period('M').astype(str)
+
+# Rename columns for better readability
+trees_data.rename(columns={
+    'common_name': 'Common Name',
+    'diameter_breast_height': 'Diameter at Breast Height',
+    'date_planted': 'Date Planted',
+    'latitude': 'Latitude',
+    'longitude': 'Longitude',
+    'age_description': 'Age Description'
+}, inplace=True)
+
+landmarks_data.rename(columns={
+    'feature_name': 'Feature Name',
+    'theme': 'Theme',
+    'co_ordinates.lat': 'Latitude',
+    'co_ordinates.lon': 'Longitude'
+}, inplace=True)
+
+# Charts
+st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>Melbourne</h1>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; margin-top: 0;'>Trees and Landmarks</h2>", unsafe_allow_html=True)
+
+# Place multiselect and radio button side by side
+col1, col2, col3 = st.columns([1, 1, 1])
+with col1:
+    selected_tree = st.multiselect('Select a tree:', trees_data['Common Name'].unique(), key='tree_multiselect')
+with col2:
+    chart_type = st.radio('Show Chart', ['Line', 'Bar'], key='chart_type_radio')
+with col3:
+    selected_landmarks = st.multiselect('Select a landmark:', landmarks_data['Theme'].unique(), key='landmark_multiselect')
+
+# Number of trees planted per month as a scatter plot with lines
+trees_per_month = trees_data.groupby(['month_planted', 'Common Name']).size().reset_index(name='count')
+
+# Filter data based on selected trees
+if selected_tree:
+    filtered_trees_data = trees_data[trees_data['Common Name'].isin(selected_tree)]
+    filtered_trees_per_month = trees_per_month[trees_per_month['Common Name'].isin(selected_tree)]
 else:
-    print(f"Failed to retrieve data. HTTP Status code: {response.status_code}")
+    filtered_trees_data = trees_data
+    filtered_trees_per_month = trees_per_month
 
-# # URL of the dataset
-# url2 = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/microclimate-sensors-data/exports/csv?delimiter=%3B&list_separator=%2C&quote_all=false&with_bom=true"
+# Create bar and line charts based on filtered data
+fig_trees_bar = px.bar(filtered_trees_per_month, x='month_planted', y='count', title='Number of Trees Planted Per Month')
+fig_trees_line = px.line(filtered_trees_per_month, x='month_planted', y='count', color='Common Name', title='Number of Trees Planted Per Month', markers=True)
 
-# # Send GET request
-# response2 = requests.get(url2)
+# Select the chart type based on the radio button selection
+if chart_type == 'Line':
+    fig_trees = fig_trees_line
+else:
+    fig_trees = fig_trees_bar
 
-# # Check if the request was successful
-# if response2.status_code == 200:
-#     # Decode the content to a string
-#     content2 = response2.content.decode('utf-8')
-    
-#     # Use io.StringIO to treat the string as a file
-#     csv_file2 = io.StringIO(content2)
-    
-#     # Read the CSV content
-#     csv_reader2 = csv.reader(csv_file2, delimiter=';')
-    
-#     # Write the CSV content to a properly formatted CSV file
-#     with open("temp_envir.csv", "w", newline='', encoding='utf-8') as file:
-#         csv_writer2 = csv.writer(file)
-#         for row in csv_reader2:
-#             csv_writer2.writerow(row)
-    
-#     print("Temp CSV file has been saved successfully.")
-# else:
-#     print(f"Failed to retrieve data. HTTP Status code: {response2.status_code}")
+# Number of each landmark type
+landmarks_count = landmarks_data.groupby('Theme').size().reset_index(name='count')
+fig_landmarks = px.bar(landmarks_count, x='count', y='Theme', title='Number of Each Landmark Type')
 
-# # Load the datasets
-# trees = pd.read_csv('trees_with_species_and_dimensions.csv', delimiter=';')
-# temp = pd.read_csv('temp_envir.csv', delimiter=';')
+# Map showing locations of filtered trees and landmarks
+fig_map1 = px.scatter_mapbox(filtered_trees_data, lat='Latitude', lon='Longitude', hover_name='Common Name', 
+                            color='Common Name', color_discrete_sequence=px.colors.qualitative.Plotly, zoom=11.5, height=500, title='Tree Locations')
 
-# # Print the columns of the DataFrame
-# print("Columns in the trees DataFrame:", trees.columns)
-# print("Columns in the temp DataFrame:", temp.columns)
+# Filter landmarks data based on selected landmarks
+if selected_landmarks:
+    filtered_landmarks_data = landmarks_data[landmarks_data['Theme'].isin(selected_landmarks)]
+else:
+    filtered_landmarks_data = landmarks_data
 
-# dfTrees = pd.DataFrame(trees, columns=['Tree ID', 'Common Name', 'Date planted', 'Latitude', 'Longitude'])
-# dfTemp = pd.DataFrame(temp, columns=['ID', 'Date', 'Location', 'LatLong', 'Min Wind Dir', 'Av Wind Dir', 'Max Wind Dir', 'Min Wind Speed', 'Av Wind Speed', 'Gust Wind Speed', 'Air Temperature (C)', 'Relative Humidity (%)', 'Atmos Press', 'pm25', 'pm10', 'noise'])
+fig_map2 = px.scatter_mapbox(filtered_landmarks_data, lat='Latitude', lon='Longitude', hover_name='Feature Name', color = 'Theme',
+                            color_discrete_sequence=px.colors.qualitative.Plotly, zoom=11.5, height=500, title='Landmark Locations')
 
-# # Convert date columns to datetime if the column exists
-# if 'Date planted' in trees.columns:
-#     trees['Date planted'] = pd.to_datetime(trees['Date planted'])
-# else:
-#     print("Column 'Date planted' not found in the trees DataFrame.")
+# Update layout for title and legend
+fig_map1.update_layout(
+    mapbox_style="open-street-map",
+    margin={"r":0,"t":0,"l":0,"b":0},
+    title="Tree Locations",
+    legend=dict(
+        title="Legend",
+        itemsizing='constant'
+    )
+)
 
-# # Print the columns of the temp DataFrame
-# print("Columns in the temp DataFrame:", temp.columns)
-# print(trees.head())
+fig_map2.update_layout(
+    mapbox_style="open-street-map",
+    margin={"r":0,"t":0,"l":0,"b":0},
+    title="Landmark Locations",
+    legend=dict(
+        title="Legend",
+        itemsizing='constant'
+    )
+)
 
-# # Convert 'Date' to datetime if the column exists
-# if 'Date' in dfTemp.columns:
-#     temp['Date'] = pd.to_datetime(temp['Date'])
-# else:
-#     print("Column 'Date' not found in the temp DataFrame.")
+# Display charts side by side
+col1, col2 = st.columns(2)
+col1.plotly_chart(fig_trees, use_container_width=True)
+col2.plotly_chart(fig_landmarks, use_container_width=True)
 
-# # Streamlit code to download temperature data
-# if st.sidebar.button('Download Temperature Data'):
-#     st.sidebar.download_button(
-#         label="Click here to download",
-#         data=temp.to_csv(index=False).encode('utf-8'),
-#         file_name='melbourne_temperature_data.csv',
-#         mime='text/csv',
-#     )
+# Limit the width of the map
+map_col1, map_col2 = st.columns([2, 2])
+with map_col1:
+    st.plotly_chart(fig_map1, use_container_width=True)
+with map_col2:
+    st.plotly_chart(fig_map2, use_container_width=True)
+
+# Display data tables at the bottom of the page
+col1, col2 = st.columns([2, 2])
+with col1:
+    st.subheader("Trees Data Table")
+    st.dataframe(filtered_trees_data, height=300)
+with col2:
+    st.subheader("Landmarks Data Table")
+    st.dataframe(filtered_landmarks_data, height=300)
