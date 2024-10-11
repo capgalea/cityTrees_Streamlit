@@ -1,0 +1,2 @@
+### RDP historical-pricing: retrieve time series pricing Interday summaries data
+GET https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/landmarks-and-places-of-interest-including-schools-theatres-health-services-spor/exports/json?limit=10000&timezone=UTC&use_labels=false&epsg=4326

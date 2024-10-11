@@ -1,0 +1,11 @@
+device_id,received_at,sensorlocation,minimumwinddirection,averagewinddirection,maximumwinddirection,minimumwindspeed,averagewindspeed,gustwindspeed,airtemperature,relativehumidity,atmosphericpressure,pm25,pm10,noise,latlong.lon,latlong.lat
+ICTMicroclimate-11,2024-10-06T02:25:53+00:00,1 Treasury Place,0.0,354.0,359.0,0.0,2.1,4.6,17.5,53.9,1005.7,1.0,1.0,52.0,144.9750857,-37.812888
+ICTMicroclimate-04,2024-10-06T02:11:08+00:00,Batman Park,0.0,310.0,356.0,0.0,0.6,5.0,17.4,54.9,1013.1,4.0,4.0,62.0,144.9562225,-37.8221828
+ICTMicroclimate-08,2024-10-06T02:27:32+00:00,Swanston St - Tram Stop 13 adjacent Federation Sq & Flinders St Station,0.0,27.0,359.0,0.0,1.4,6.0,18.0,51.3,1010.1,6.0,7.0,73.1,144.9678474,-37.8184515
+ICTMicroclimate-04,2024-10-06T02:26:09+00:00,Batman Park,0.0,316.0,356.0,0.0,0.9,3.5,17.6,53.4,1013.3,4.0,4.0,69.3,144.9562225,-37.8221828
+aws5-0999,2024-10-06T02:30:28+00:00,Royal Park Asset ID: COM2707,0.0,68.0,353.0,1.2,0.2,1.8,17.4,59.0,1008.2,,,,144.9519007,-37.7956167
+ICTMicroclimate-02,2024-10-06T02:14:39+00:00,101 Collins St L11 Rooftop,73.0,159.0,343.0,0.4,1.7,4.9,17.0,58.6,1005.8,3.0,10.0,68.8,144.9702991,-37.814604
+ICTMicroclimate-10,2024-10-06T02:17:33+00:00,1 Treasury Place,88.0,58.0,98.0,0.9,0.8,0.9,17.7,57.2,1006.0,1.0,3.0,77.1,144.9745395,-37.8128595
+ICTMicroclimate-01,2024-10-06T02:17:56+00:00,Birrarung Marr Park - Pole 1131,,3.0,,,0.6,,17.0,58.799999,1009.700012,2.0,7.0,58.599998,144.9716404,-37.8185931
+ICTMicroclimate-08,2024-10-06T01:57:25+00:00,Swanston St - Tram Stop 13 adjacent Federation Sq & Flinders St Station,0.0,232.0,356.0,0.0,2.2,4.5,18.1,51.0,1010.3,4.0,6.0,70.7,144.9678474,-37.8184515
+ICTMicroclimate-04,2024-10-06T01:56:06+00:00,Batman Park,0.0,233.0,346.0,0.0,1.3,3.7,17.1,57.0,1013.1,4.0,4.0,63.5,144.9562225,-37.8221828
