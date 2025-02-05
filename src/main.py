@@ -1,5 +1,5 @@
-from src.home_page import home_page
-from src.dashbord_page import dashboard_page
+from home_page import home_page
+from dashboard_page import dashboard_page
 import streamlit as st
 
 # Set page configuration
