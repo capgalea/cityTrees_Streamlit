@@ -47,8 +47,6 @@ landmarks_data.rename(columns={
 
 
 def dashboard_page():
-    # Set page configuration
-    st.set_page_config(layout="wide")
 
     # Charts
     st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>Melbourne</h1>", unsafe_allow_html=True)
